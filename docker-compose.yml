@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pastoapp
+      POSTGRES_PASSWORD: pastoapp
+      POSTGRES_DB: pastoapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg2://pastoapp:pastoapp@db:5432/pastoapp
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+      LOG_LEVEL: INFO
+      MEDIA_ROOT: /app/storage
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "pastoapp.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - storage_data:/app/storage
+
+volumes:
+  db_data:
+  storage_data:
