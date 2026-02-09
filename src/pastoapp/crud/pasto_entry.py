@@ -1,17 +1,24 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from pastoapp.models.pasto_entry import PastoEntry
 from pastoapp.schemas.pasto_entry import PastoEntryCreate, PastoEntryUpdate
 
 
+try:
+    _BOGOTA_TZ = ZoneInfo("America/Bogota")
+except ZoneInfoNotFoundError:
+    _BOGOTA_TZ = timezone(timedelta(hours=-5))
+
+
 def _utcnow() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=_BOGOTA_TZ)
 
 
 def get_next_updated_seq(db: Session) -> int:
@@ -84,7 +91,11 @@ def list_entries(
         stmt = stmt.where(PastoEntry.updated_at > updated_since)
     if not include_deleted:
         stmt = stmt.where(PastoEntry.deleted_at.is_(None))
-    stmt = stmt.order_by(PastoEntry.updated_at).offset(offset).limit(limit)
+    stmt = (
+        stmt.order_by(desc(PastoEntry.created_at), desc(PastoEntry.updated_at))
+        .offset(offset)
+        .limit(limit)
+    )
     return list(db.scalars(stmt))
 
 

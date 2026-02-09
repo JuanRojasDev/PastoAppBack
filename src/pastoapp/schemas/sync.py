@@ -23,6 +23,8 @@ class SyncRejectedItem(BaseModel):
 
 
 class SyncPushResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     accepted: list[uuid.UUID]
     rejected: list[SyncRejectedItem]
     server_time: datetime = Field(..., alias="serverTime")
@@ -30,6 +32,8 @@ class SyncPushResponse(BaseModel):
 
 
 class SyncPullResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     items: list[PastoEntryRead]
     deleted: list[uuid.UUID]
     new_cursor: int = Field(..., alias="newCursor")

@@ -71,13 +71,13 @@ def pull_pasto_entries(
     resolved_device_id = x_device_id or device_id
     entries = list_entries_by_cursor(db, cursor, limit, resolved_device_id)
     items: list[PastoEntryRead] = []
-    deleted: list = []
+    deleted: list[uuid.UUID] = []
     max_cursor = cursor
     for entry in entries:
-        max_cursor = max(max_cursor, entry.updated_seq)
+        max_cursor = max(max_cursor, entry.updated_seq or 0)
         if entry.deleted_at:
-            deleted.append(entry.id)
+            deleted.append(entry.uuid)
         else:
-            items.append(entry)
+            items.append(PastoEntryRead.model_validate(entry))
 
     return SyncPullResponse(items=items, deleted=deleted, new_cursor=max_cursor)
